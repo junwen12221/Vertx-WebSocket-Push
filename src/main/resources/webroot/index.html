@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <script src="jquery.js"></script>
+    <title>城市天气推送系统</title>
+</head>
+<body>
+
+<h1>WebSocket 城市天气推送系统</h1>
+
+选择城市:
+<select id="citycode">
+    <option value="101070201">大连</option>
+    <option value="101121301">威海</option>
+</select>
+<input type="button" id="sendButton" value="确定">
+<h3>天气预报</h3>
+<div style="width: 300px;height: 200px;background-color: #AAA">
+    <span>城市:</span>
+    <span id="city"></span>
+    <br/>
+    <span>日期:</span>
+    <span id="date"></span>
+    <br/>
+    <span>温度:</span>
+    <span id="temp"></span>
+    <br/>
+    <span>天气:</span>
+    <span id="weather"></span>
+    <br/>
+    <span>风速:</span>
+    <span id="wind"></span>
+    <br/>
+    <span id="fx"></span>
+    <br/>
+</div>
+
+<div id="rinfo"></div>
+
+
+<script language="javascript">
+    $(document).ready(function () {
+        var socket=new WebSocket('ws://localhost:8181');
+        socket.onopen=function (event) {
+            $("#rinfo").append("WebSocket 连接了<br/>");
+            socket.onmessage=function (event) {
+                var wdata=JSON.parse(event.data);
+                $("#rinfo").html("接收数据: "+wdata.forecast.city+"<br/>");
+                $("#city").html(wdata.forecast.city);
+                $("#date").html(wdata.forecast.date_y);
+                $("#temp").html(wdata.forecast.temp1);
+                $("#weather").html(wdata.forecast.img_title);
+                $("#wind").html(wdata.forecast.fll);
+                $("#fx").html(wdata.forecast.fxl);
+            };
+            socket.onclose=function (closeevent) {
+                $("#rinfo").append("WebSocket 关闭了:<br/>");
+            };
+            $("#sendButton").on("click",function () {
+                var sendinfo=$("#citycode").val();
+                socket.send(sendinfo);
+            })
+        }
+        $('#generateToken').on('click', function () {
+            $.ajax({
+                url: '/protected/newToken',
+                dataType: 'text',
+                success: function (text) {
+                    $('#token').html('Current Token: ' + text);
+                }
+            });
+        });
+
+        $('#getProtected').on('click', function () {
+            $.ajax({
+                url: '/protected/protected',
+                dataType: 'text',
+                headers: {
+                    "Authorization": "Bearer " + $('#token').html().substring(15)
+                },
+                success: function (text) {
+                    $('#protected').html(text);
+                },
+                error: function (err) {
+                    $('#protected').html('Error: ' + err.toString());
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
